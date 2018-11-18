@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class HexGrid {
     public Vector2Int gridSize;
+    // TODO upgrade grid storage to Hash table
     private Hex[,] hexGrid;
     private Layout gridLayout;
 
@@ -39,6 +40,8 @@ public class HexGrid {
     public void SetHexAt(Vector3 worldCoords, Hex hex) {
         SetHexAt(new Vector2(worldCoords.x, worldCoords.z), hex);
     }
+
+    // TODO add WorldToHex and HexToWorld functions to HexGrid class
 }
 
 
@@ -47,7 +50,7 @@ public class Hex {
     public Hex(Vector3Int coords) {
         this.coords = coords;
         //this.hexTile = new GameObject("Blank Tile (" + coords.x + ", " + coords.z +")");
-        if (coords.x + coords.y + coords.z != 0) throw new ArgumentException("q + r + s must be 0");
+        if (coords.x + coords.y + coords.z != 0) throw new ArgumentException("x + y + z must be 0");
     }
 
     // vectorized axial constructor
@@ -154,6 +157,8 @@ public struct Orientation {
     public readonly double b2;
     public readonly double b3;
     public readonly double start_angle;
+
+    // TODO Move Orientation pointy and Orientation flat to here as static readonly
 }
 
 public struct Layout {

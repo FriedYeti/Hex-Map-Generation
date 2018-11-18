@@ -18,6 +18,7 @@ public class MapGenerator : MonoBehaviour {
     public HexGrid map;
 
     private void Awake() {
+	    // TODO set mapOrigin to object's origin instead of public variable
         mapLayout = new Layout(Layout.pointy, unitSize, mapOrigin);
         map = new HexGrid(mapSize, mapLayout);
 

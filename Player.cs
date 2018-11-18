@@ -5,6 +5,7 @@ using UnityEngine;
 public class Player : MonoBehaviour {
     public new Camera camera;
 
+    // TODO Store ref to map instead of MapGenerator
     public MapGenerator mapRef;
 
     public LayerMask tileLayerMask;
