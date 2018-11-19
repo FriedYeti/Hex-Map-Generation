@@ -20,7 +20,7 @@ public class HexGrid {
     }
 
     public Hex GetHexAt(Vector2 worldCoords) {
-        FractionalHex fractHex = gridLayout.PixelToHex(worldCoords);
+        FractionalHex fractHex = gridLayout.WorldToHex(worldCoords);
         return GetHex(fractHex.HexRound().axialCoords);
     }
 
@@ -33,7 +33,7 @@ public class HexGrid {
     }
 
     public void SetHexAt(Vector2 worldCoords, Hex hex) {
-        FractionalHex fractHex = gridLayout.PixelToHex(worldCoords);
+        FractionalHex fractHex = gridLayout.WorldToHex(worldCoords);
         SetHex(fractHex.HexRound().axialCoords, hex);
     }
 
@@ -41,7 +41,21 @@ public class HexGrid {
         SetHexAt(new Vector2(worldCoords.x, worldCoords.z), hex);
     }
 
-    // TODO add WorldToHex and HexToWorld functions to HexGrid class
+    public Vector2Int WorldToHex(Vector2 worldCoords) {
+        return this.gridLayout.WorldToHex(worldCoords).HexRound().axialCoords;
+    }
+
+    public Vector2Int WorldToHex(Vector3 worldCoords) {
+        return WorldToHex(new Vector2(worldCoords.x, worldCoords.z));
+    }
+
+    public Vector2 HexToWorld(Vector2Int hexCoords) {
+        return this.gridLayout.HexToWorld(GetHex(hexCoords));
+    }
+
+    public Vector2 HexToWorld(Hex hex) {
+        return this.gridLayout.HexToWorld(hex);
+    }
 }
 
 
@@ -158,7 +172,8 @@ public struct Orientation {
     public readonly double b3;
     public readonly double start_angle;
 
-    // TODO Move Orientation pointy and Orientation flat to here as static readonly
+    static public readonly Orientation pointy = new Orientation(Math.Sqrt(3.0), Math.Sqrt(3.0) / 2.0, 0.0, 3.0 / 2.0, Math.Sqrt(3.0) / 3.0, -1.0 / 3.0, 0.0, 2.0 / 3.0, 0.5);
+    static public readonly Orientation flat = new Orientation(3.0 / 2.0, 0.0, Math.Sqrt(3.0) / 2.0, Math.Sqrt(3.0), 2.0 / 3.0, 0.0, -1.0 / 3.0, Math.Sqrt(3.0) / 3.0, 0.0);
 }
 
 public struct Layout {
@@ -170,10 +185,8 @@ public struct Layout {
     public readonly Orientation orientation;
     public readonly Vector2 size;
     public readonly Vector2 origin;
-    static public Orientation pointy = new Orientation(Math.Sqrt(3.0), Math.Sqrt(3.0) / 2.0, 0.0, 3.0 / 2.0, Math.Sqrt(3.0) / 3.0, -1.0 / 3.0, 0.0, 2.0 / 3.0, 0.5);
-    static public Orientation flat = new Orientation(3.0 / 2.0, 0.0, Math.Sqrt(3.0) / 2.0, Math.Sqrt(3.0), 2.0 / 3.0, 0.0, -1.0 / 3.0, Math.Sqrt(3.0) / 3.0, 0.0);
 
-    public Vector2 HexToPixel(Hex h) {
+    public Vector2 HexToWorld(Hex h) {
         Orientation M = orientation;
         float x = (float)(M.f0 * h.coords.x + M.f1 * h.coords.z) * size.x;
         float y = (float)(M.f2 * h.coords.x + M.f3 * h.coords.z) * size.y;
@@ -181,7 +194,7 @@ public struct Layout {
     }
 
 
-    public FractionalHex PixelToHex(Vector2 p) {
+    public FractionalHex WorldToHex(Vector2 p) {
         Orientation M = orientation;
         Vector2 pt = new Vector2((p.x - origin.x) / size.x, (p.y - origin.y) / size.y);
         float q = (float)(M.b0 * pt.x + M.b1 * pt.y);
@@ -199,7 +212,7 @@ public struct Layout {
 
     public List<Vector2> PolygonCorners(Hex h) {
         List<Vector2> corners = new List<Vector2> { };
-        Vector2 center = HexToPixel(h);
+        Vector2 center = HexToWorld(h);
         for (int i = 0; i < 6; i++) {
             Vector2 offset = HexCornerOffset(i);
             corners.Add(new Vector2(center.x + offset.x, center.y + offset.y));
