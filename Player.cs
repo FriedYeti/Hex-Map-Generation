@@ -67,7 +67,7 @@ public class Player : MonoBehaviour {
     public void DrawLineBetweenHexes(Hex a, Hex b) {
         Debug.DrawLine(new Vector3(map.HexToWorld(a).x,0,map.HexToWorld(a).y) + new Vector3(0, 0.5f, 0), new Vector3(map.HexToWorld(b).x, 0, map.HexToWorld(b).y) + new Vector3(0, 0.5f, 0), Color.cyan, 5f);
 
-        int distance = a.Distance(b) + 1;
+        int distance = a.Distance(b);
         List<Vector3> lerpPoints = new List<Vector3>();
 
         for (int i = 0; i <= distance; i++) {
