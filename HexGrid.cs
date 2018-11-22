@@ -28,6 +28,26 @@ public class HexGrid {
         return GetHexAt(new Vector2(worldCoords.x, worldCoords.z));
     }
 
+    public List<Hex> GetHexNeighbors(Vector2Int axialCoords) {
+	List<Hex> neighbors = new List<Hex>;
+	currentHex = GetHex(axialCoords);
+        for(int i = 0; i < 6; i++) {
+	    Vector3 neighborCoords = currentHex.GetNeighbor(i);
+	    if(GetHex(neighborCoords) != null) {
+	        neighbors.Add(GetHex(neighborCoords));
+	    }
+	}
+	return neighbors;
+    }
+
+    public List<Hex> GetHexNeighbors(Vector3 worldCoords) {
+	return GetHexNeighbors(new Vector2Int(worldCoords.x, 0, worldCoords.z));
+    }
+
+    public List<Hex> GetHexNeighbors(Hex currentHex) {
+	return GetHexNeighbors(currentHex.axialCoords);
+    }
+
     public void SetHex(Vector2Int axialCoords, Hex hex) {
         this.hexGrid[axialCoords.x, axialCoords.y] = hex;
     }
@@ -147,7 +167,16 @@ public class Hex {
     public Hex Neighbor(int direction) {
         return Add(Hex.Direction(direction));
     }
+    
+    static public List<Vector3Int> directionOffsets = new List<Vector3Int>(new Vector3Int(1, 0, -1), new Vector3Int(1, -1, 0), new Vector3Int(0, -1, 1), new Vector3Int(-1, 0, 1), new Vector3Int(-1, 1, 0), new Vector3Int(0, 1, -1));
 
+    static public Vector3 GetDirectionOffset(int direction) {
+        return Hex.directionOffsets[direction];
+    }
+
+    public Vector3 GetNeighborCoords(int direction) {
+        return this.coords + Hex.DirectionOffset(direction);
+    }
 }
 
 public struct Orientation {
