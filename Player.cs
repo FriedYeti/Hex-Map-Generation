@@ -13,6 +13,8 @@ public class Player : MonoBehaviour {
 
     public Unit selectedUnit = new Unit();
 
+    public GameObject hexTargetRing;
+
 	void Start () {
         camera = Camera.main;
 
@@ -32,6 +34,7 @@ public class Player : MonoBehaviour {
             Debug.DrawLine(new Vector3(9, 10, 5), hit.transform.position, Color.blue);            
         }
         else if (Physics.Raycast(ray, out hit, camera.farClipPlane, tileLayerMask)) {
+            hexTargetRing.transform.position = hit.transform.position;
             Transform objectHit = hit.transform;
             Debug.DrawLine(new Vector3(9,10,5), hit.transform.position + hit.transform.GetComponent<TileInfo>().unitOffset, Color.red);
 
@@ -39,6 +42,10 @@ public class Player : MonoBehaviour {
                 DrawLineBetweenHexes(currentTile, map.GetHexAt(hit.transform.position));
 
             }
+        }
+        else {
+            // hide target ring somewhere off camera
+            hexTargetRing.transform.position = new Vector3(0,1000, 0);
         }
         Debug.DrawRay(gameObject.transform.position, Vector3.up * 1, Color.green);
 
@@ -83,7 +90,7 @@ public class Player : MonoBehaviour {
             Vector2 firstPos = map.HexToWorld(first);
             Hex second = map.GetHexAt(lerpPoints[i + 1]);
             Vector2 secondPos = map.HexToWorld(second);
-            Debug.DrawRay(new Vector3(firstPos.x, 0, firstPos.y), Vector3.up * rayLength, Color.red, 5f);
+            //Debug.DrawRay(new Vector3(firstPos.x, 0, firstPos.y), Vector3.up * rayLength, Color.red, 5f);
             Debug.DrawLine(new Vector3(firstPos.x, 1f, firstPos.y), new Vector3(secondPos.x, 1f, secondPos.y), Color.green, 5f);
             rayLength++;
         }
