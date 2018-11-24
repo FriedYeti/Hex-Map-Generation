@@ -76,7 +76,7 @@ public class HexGrid {
 
         List<Hex> results = new List<Hex>();
         for(int x = -range; x <= range; x++) {
-            for(int y = Math.max(-range, -x-Range); y <= min(range, -x + range); y++) {
+            for(int y = Math.max(-range, -x-Range); y <= Math.min(range, -x + range); y++) {
                 int z = -x -y;
                 targetHex = GetHex(startingHex.coords + new Vector3(x, y, z));
                 if(targetHex != null && !targetHex.tileInfo.isBlocked) {
@@ -103,6 +103,25 @@ public class HexGrid {
 	results[0].Add(startingHex);
 	//
 	return results;
+	
+	/*
+	 *frontier = priorityQueue<Hex>
+	 frontier.Enqueue(startingHex);
+	 cameFrom = new List<something?>
+	 costSoFar = new List<int>
+	 costSoFar[0] = 0;
+
+	 while(!frontier.empty())
+	 	currentTile = frontier.Dequeue();
+
+		for(Hex nextHex in currentTile.GetNeighbors()) {
+			newCost = costSoFar[currentTile] + nextTile.GetTileInfo().movementCost;
+			if(nextTile not in costSoFar or newCost < costSoFar[nextTile] {
+				costSoFar[nextTile]
+				priority = newCost
+				frontier.Enqueue(priority, nextTile
+
+	 */
     }
 
     public Hex GetHex(Vector2Int axialCoords) {
