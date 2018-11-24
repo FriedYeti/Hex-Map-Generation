@@ -8,8 +8,8 @@ public class BucketPriority<T> {
     private bool isMonotonic;
     private int monotonicIndex;
 
-    public BucketPriority(isMonotonic = false) {
-	    queue = new List<List<T>();
+    public BucketPriority(bool isMonotonic = false) {
+	    queue = new List<List<T>>();
 	    this.isMonotonic = isMonotonic;
 	    monotonicIndex = 0;
     }
@@ -23,39 +23,40 @@ public class BucketPriority<T> {
 
     public T Dequeue() {
 	    if(isMonotonic) {
-		    while(queue[monotonicIndex].Length < 1) {
-			    montonicIndex++;
+		    while(queue[monotonicIndex].Count < 1) {
+			    monotonicIndex++;
 		    }
-		    T temp = queue[monotonicIndex][queue[monotonicIndex].Length -1];
-		    queue[monotonicIndex].RemoveAt(queue[monotonicIndex.Length -1);
+		    T temp = queue[monotonicIndex][queue[monotonicIndex].Count -1];
+		    queue[monotonicIndex].RemoveAt(queue[monotonicIndex].Count -1);
 		    return temp;
 	    }
 	else {
 		int priorityIndex = 0;
-		while(queue[priorityIndex].Length < 1) {
+		while(queue[priorityIndex].Count < 1) {
 		    priorityIndex++;
 		}
-		T temp = queue[priorityIndex][queue[priorityIndex].Length -1];
-		queue[priorityIndex].RemoveAt(queue[priorityIndex.Length -1);
+		T temp = queue[priorityIndex][queue[priorityIndex].Count -1];
+		queue[priorityIndex].RemoveAt(queue[priorityIndex].Count -1);
 		return temp;
-	}
+	    }
     }
 
     public T Peak() {
-	    if(isMonotonic) {
-		    while(queue[monotonicIndex].Length < 1) {
-			    montonicIndex++;
-		    }
-		    T temp = queue[monotonicIndex][queue[monotonicIndex].Length -1];
-		    return temp;
-	    }
-	else {
-		int priorityIndex = 0;
-		while(queue[priorityIndex].Length < 1) {
-		    priorityIndex++;
-		}
-		T temp = queue[priorityIndex][queue[priorityIndex].Length -1];
-		return temp;
+        if (isMonotonic) {
+            while (queue[monotonicIndex].Count < 1) {
+                monotonicIndex++;
+            }
+            T temp = queue[monotonicIndex][queue[monotonicIndex].Count - 1];
+            return temp;
+        }
+        else {
+            int priorityIndex = 0;
+            while (queue[priorityIndex].Count < 1) {
+                priorityIndex++;
+            }
+            T temp = queue[priorityIndex][queue[priorityIndex].Count - 1];
+            return temp;
+        }
     }
 }
 
@@ -76,10 +77,10 @@ public class HexGrid {
 
         List<Hex> results = new List<Hex>();
         for(int x = -range; x <= range; x++) {
-            for(int y = Math.max(-range, -x-Range); y <= Math.min(range, -x + range); y++) {
+            for(int y = Math.Max(-range, -x-range); y <= Math.Min(range, -x + range); y++) {
                 int z = -x -y;
-                targetHex = GetHex(startingHex.coords + new Vector3(x, y, z));
-                if(targetHex != null && !targetHex.tileInfo.isBlocked) {
+                Hex targetHex = GetHex(startingHex.coords + new Vector3Int(x, y, z));
+                if(targetHex != null && !targetHex.GetTileInfo().isBlocked) {
                     results.Add(targetHex);
                 }
             }
@@ -92,13 +93,13 @@ public class HexGrid {
     }
 
     public List<Hex> GetHexesInRange(Vector3 worldCoords, int range) {
-	    return GetHexesInRange(GetHexAt(worldCoords, range));
+	    return GetHexesInRange(GetHexAt(worldCoords), range);
     }
 
     public List<List<Hex>> GetHexesInMovementRange(Hex startingHex, int movementRange) {
         // Modified Dijkstra's Algorithm AKA Uniform Cost Search
 	// results[x] is a List<Hex> reachable in x movementCost
-	List<List<Hex>> results = new List<List<Hex>>;
+	List<List<Hex>> results = new List<List<Hex>>();
 	results[0] = new List<Hex>();
 	results[0].Add(startingHex);
 	//
@@ -142,10 +143,10 @@ public class HexGrid {
     }
 
     public List<Hex> GetHexNeighbors(Vector2Int axialCoords) {
-	List<Hex> neighbors = new List<Hex>;
-	currentHex = GetHex(axialCoords);
+	List<Hex> neighbors = new List<Hex>();
+	Hex currentHex = GetHex(axialCoords);
         for(int i = 0; i < 6; i++) {
-	    Vector3 neighborCoords = currentHex.GetNeighbor(i);
+	    Vector3Int neighborCoords = currentHex.GetNeighborCoords(i);
 	    if(GetHex(neighborCoords) != null) {
 	        neighbors.Add(GetHex(neighborCoords));
 	    }
@@ -153,8 +154,8 @@ public class HexGrid {
 	return neighbors;
     }
 
-    public List<Hex> GetHexNeighbors(Vector3 worldCoords) {
-	return GetHexNeighbors(new Vector2Int(worldCoords.x, worldCoords.z));
+    public List<Hex> GetHexNeighbors(Vector3Int coords) {
+	return GetHexNeighbors(new Vector2Int(coords.x, coords.z));
     }
 
     public List<Hex> GetHexNeighbors(Hex currentHex) {
@@ -287,14 +288,14 @@ public class Hex {
         return Add(Hex.Direction(direction));
     }
     
-    static public List<Vector3Int> directionOffsets = new List<Vector3Int>(new Vector3Int(1, 0, -1), new Vector3Int(1, -1, 0), new Vector3Int(0, -1, 1), new Vector3Int(-1, 0, 1), new Vector3Int(-1, 1, 0), new Vector3Int(0, 1, -1));
+    static public List<Vector3Int> directionOffsets = new List<Vector3Int> { new Vector3Int(1, 0, -1), new Vector3Int(1, -1, 0), new Vector3Int(0, -1, 1), new Vector3Int(-1, 0, 1), new Vector3Int(-1, 1, 0), new Vector3Int(0, 1, -1) };
 
     static public Vector3 GetDirectionOffset(int direction) {
         return Hex.directionOffsets[direction];
     }
 
-    public Vector3 GetNeighborCoords(int direction) {
-        return this.coords + Hex.DirectionOffset(direction);
+    public Vector3Int GetNeighborCoords(int direction) {
+        return this.coords + Hex.directionOffsets[direction];
     }
 }
 
