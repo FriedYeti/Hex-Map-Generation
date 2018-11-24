@@ -3,6 +3,62 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public class BucketPriority<T> {
+    private List<List<T>> queue;
+    private bool isMonotonic;
+    private int monotonicIndex;
+
+    public BucketPriority(isMonotonic = false) {
+	    queue = new List<List<T>();
+	    this.isMonotonic = isMonotonic;
+	    monotonicIndex = 0;
+    }
+
+    public void Enqueue(int priority, T newData) {
+	    if(isMonotonic && priority < monotonicIndex) {
+		    throw new Exception("Cannot add a lower priority than has been removed from a monotonic priority");
+	    }
+	    queue[priority].Add(newData);
+    }
+
+    public T Dequeue() {
+	    if(isMonotonic) {
+		    while(queue[monotonicIndex].Length < 1) {
+			    montonicIndex++;
+		    }
+		    T temp = queue[monotonicIndex][queue[monotonicIndex].Length -1];
+		    queue[monotonicIndex].RemoveAt(queue[monotonicIndex.Length -1);
+		    return temp;
+	    }
+	else {
+		int priorityIndex = 0;
+		while(queue[priorityIndex].Length < 1) {
+		    priorityIndex++;
+		}
+		T temp = queue[priorityIndex][queue[priorityIndex].Length -1];
+		queue[priorityIndex].RemoveAt(queue[priorityIndex.Length -1);
+		return temp;
+	}
+    }
+
+    public T Peak() {
+	    if(isMonotonic) {
+		    while(queue[monotonicIndex].Length < 1) {
+			    montonicIndex++;
+		    }
+		    T temp = queue[monotonicIndex][queue[monotonicIndex].Length -1];
+		    return temp;
+	    }
+	else {
+		int priorityIndex = 0;
+		while(queue[priorityIndex].Length < 1) {
+		    priorityIndex++;
+		}
+		T temp = queue[priorityIndex][queue[priorityIndex].Length -1];
+		return temp;
+    }
+}
+
 public class HexGrid {
     public Vector2Int gridSize;
     // TODO upgrade grid storage to Hash table
@@ -15,8 +71,65 @@ public class HexGrid {
         this.gridLayout = gridLayout;
     }
 
+    public List<Hex> GetHexesInRange(Hex startingHex, int range) {
+        if (range < 0) throw new ArgumentException("range cannot be negative");
+
+        List<Hex> results = new List<Hex>();
+        for(int x = -range; x <= range; x++) {
+            for(int y = Math.max(-range, -x-Range); y <= Math.min(range, -x + range); y++) {
+                int z = -x -y;
+                targetHex = GetHex(startingHex.coords + new Vector3(x, y, z));
+                if(targetHex != null && !targetHex.tileInfo.isBlocked) {
+                    results.Add(targetHex);
+                }
+            }
+        }
+        return results;
+    }
+
+    public List<Hex> GetHexesInRange(Vector2Int axialCoords, int range) {
+	    return GetHexesInRange(GetHex(axialCoords), range);
+    }
+
+    public List<Hex> GetHexesInRange(Vector3 worldCoords, int range) {
+	    return GetHexesInRange(GetHexAt(worldCoords, range));
+    }
+
+    public List<List<Hex>> GetHexesInMovementRange(Hex startingHex, int movementRange) {
+        // Modified Dijkstra's Algorithm AKA Uniform Cost Search
+	// results[x] is a List<Hex> reachable in x movementCost
+	List<List<Hex>> results = new List<List<Hex>>;
+	results[0] = new List<Hex>();
+	results[0].Add(startingHex);
+	//
+	return results;
+	
+	/*
+	 *frontier = priorityQueue<Hex>
+	 frontier.Enqueue(startingHex);
+	 cameFrom = new List<something?>
+	 costSoFar = new List<int>
+	 costSoFar[0] = 0;
+
+	 while(!frontier.empty())
+	 	currentTile = frontier.Dequeue();
+
+		for(Hex nextHex in currentTile.GetNeighbors()) {
+			newCost = costSoFar[currentTile] + nextTile.GetTileInfo().movementCost;
+			if(nextTile not in costSoFar or newCost < costSoFar[nextTile] {
+				costSoFar[nextTile]
+				priority = newCost
+				frontier.Enqueue(priority, nextTile
+
+	 */
+    }
+
     public Hex GetHex(Vector2Int axialCoords) {
         return hexGrid[axialCoords.x, axialCoords.y];
+    }
+
+    public Hex GetHex(Vector3Int coords) {
+	    return hexGrid[coords.x, coords.z];
     }
 
     public Hex GetHexAt(Vector2 worldCoords) {
@@ -26,6 +139,26 @@ public class HexGrid {
 
     public Hex GetHexAt(Vector3 worldCoords) {
         return GetHexAt(new Vector2(worldCoords.x, worldCoords.z));
+    }
+
+    public List<Hex> GetHexNeighbors(Vector2Int axialCoords) {
+	List<Hex> neighbors = new List<Hex>;
+	currentHex = GetHex(axialCoords);
+        for(int i = 0; i < 6; i++) {
+	    Vector3 neighborCoords = currentHex.GetNeighbor(i);
+	    if(GetHex(neighborCoords) != null) {
+	        neighbors.Add(GetHex(neighborCoords));
+	    }
+	}
+	return neighbors;
+    }
+
+    public List<Hex> GetHexNeighbors(Vector3 worldCoords) {
+	return GetHexNeighbors(new Vector2Int(worldCoords.x, worldCoords.z));
+    }
+
+    public List<Hex> GetHexNeighbors(Hex currentHex) {
+	return GetHexNeighbors(currentHex.axialCoords);
     }
 
     public void SetHex(Vector2Int axialCoords, Hex hex) {
@@ -87,14 +220,20 @@ public class Hex {
         }
     }
     private GameObject hexTile;
+    private TileInfo tileInfo;
 
     public void SetHexTile(GameObject newTile) {
         UnityEngine.Object.Destroy(hexTile);
         this.hexTile = newTile;
+	this.tileInfo = hexTile.GetComponent<TileInfo>();
     }
 
     public GameObject GetHexTile() {
         return this.hexTile;
+    }
+
+    public TileInfo GetTileInfo() {
+        return this.tileInfo;
     }
 
     public override bool Equals(object obj) {
@@ -147,7 +286,16 @@ public class Hex {
     public Hex Neighbor(int direction) {
         return Add(Hex.Direction(direction));
     }
+    
+    static public List<Vector3Int> directionOffsets = new List<Vector3Int>(new Vector3Int(1, 0, -1), new Vector3Int(1, -1, 0), new Vector3Int(0, -1, 1), new Vector3Int(-1, 0, 1), new Vector3Int(-1, 1, 0), new Vector3Int(0, 1, -1));
 
+    static public Vector3 GetDirectionOffset(int direction) {
+        return Hex.directionOffsets[direction];
+    }
+
+    public Vector3 GetNeighborCoords(int direction) {
+        return this.coords + Hex.DirectionOffset(direction);
+    }
 }
 
 public struct Orientation {
