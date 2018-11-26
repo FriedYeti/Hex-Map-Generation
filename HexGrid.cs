@@ -115,41 +115,47 @@ public class HexGrid {
 	    return GetHexesInRange(GetHexAt(worldCoords), range);
     }
 
-    public List<List<Hex>> GetHexesInMovementRange(Hex startingHex, int movementRange) {
-        // Modified Dijkstra's Algorithm AKA Uniform Cost Search
+    public List<Hex> GetHexesInMovementRange(Hex startingHex, int movementRange) {
+    // Modified Dijkstra's Algorithm AKA Uniform Cost Search
 	// results[x] is a List<Hex> reachable in x movementCost
-	List<List<Hex>> results = new List<List<Hex>>();
-	results[0] = new List<Hex>();
-	results[0].Add(startingHex);
-	//
-	return results;
-	
-	/*
-	 *frontier = priorityQueue<Hex>
-	 frontier.Enqueue(startingHex);
-	 cameFrom = new List<something?>
-	 costSoFar = new List<int>
-	 costSoFar[0] = 0;
+	    List<Hex> results = new List<Hex>();
+	    results.Add(startingHex);
 
-	 while(!frontier.empty())
-	 	currentTile = frontier.Dequeue();
+        BucketPriority<Hex> frontier = new BucketPriority<Hex>(128, true);
+        frontier.Enqueue(0, startingHex);
+        Dictionary<Hex, int> costSoFar = new Dictionary<Hex, int>();
+        costSoFar[startingHex] = 0;
+        while(!frontier.Empty()) {
+            Hex currentHex = frontier.Dequeue();
+            List<Hex> hexNeighbors = GetHexNeighbors(currentHex);
+            if (hexNeighbors.Count > 0) {
+                foreach (Hex nextHex in hexNeighbors) {
+                    int newCost = costSoFar[currentHex] + nextHex.GetTileInfo().movementCost;
+                    if ((!costSoFar.ContainsKey(nextHex) || newCost < costSoFar[nextHex]) && newCost < movementRange) {
+                        costSoFar[nextHex] = newCost;
+                        int newPriority = newCost;
+                        frontier.Enqueue(newPriority, nextHex);
 
-		for(Hex nextHex in currentTile.GetNeighbors()) {
-			newCost = costSoFar[currentTile] + nextTile.GetTileInfo().movementCost;
-			if(nextTile not in costSoFar or newCost < costSoFar[nextTile] {
-				costSoFar[nextTile]
-				priority = newCost
-				frontier.Enqueue(priority, nextTile
-
-	 */
+                        results.Add(nextHex);
+                    }
+                }
+            }
+        }
+    return results;
     }
 
     public Hex GetHex(Vector2Int axialCoords) {
+        if(axialCoords.x < 0 || axialCoords.y < 0 || axialCoords.x > gridSize.x || axialCoords.y > gridSize.y) {
+            return null;
+        }
         return hexGrid[axialCoords.x, axialCoords.y];
     }
 
     public Hex GetHex(Vector3Int coords) {
-	    return hexGrid[coords.x, coords.z];
+        if (coords.x < 0 || coords.z < 0 || coords.x > gridSize.x || coords.z > gridSize.y) {
+            return null;
+        }
+        return hexGrid[coords.x, coords.z];
     }
 
     public Hex GetHexAt(Vector2 worldCoords) {
@@ -162,23 +168,23 @@ public class HexGrid {
     }
 
     public List<Hex> GetHexNeighbors(Vector2Int axialCoords) {
-	List<Hex> neighbors = new List<Hex>();
-	Hex currentHex = GetHex(axialCoords);
-        for(int i = 0; i < 6; i++) {
-	    Vector3Int neighborCoords = currentHex.GetNeighborCoords(i);
-	    if(GetHex(neighborCoords) != null) {
-	        neighbors.Add(GetHex(neighborCoords));
+	    List<Hex> neighbors = new List<Hex>();
+	    Hex currentHex = GetHex(axialCoords);
+            for(int i = 0; i < 6; i++) {
+	        Vector3Int neighborCoords = currentHex.GetNeighborCoords(i);
+	        if(!object.ReferenceEquals(GetHex(neighborCoords),null)) {
+	            neighbors.Add(GetHex(neighborCoords));
+	        }
 	    }
-	}
-	return neighbors;
+	    return neighbors;
     }
 
     public List<Hex> GetHexNeighbors(Vector3Int coords) {
-	return GetHexNeighbors(new Vector2Int(coords.x, coords.z));
+	    return GetHexNeighbors(new Vector2Int(coords.x, coords.z));
     }
 
     public List<Hex> GetHexNeighbors(Hex currentHex) {
-	return GetHexNeighbors(currentHex.axialCoords);
+	    return GetHexNeighbors(currentHex.axialCoords);
     }
 
     public void SetHex(Vector2Int axialCoords, Hex hex) {
@@ -202,11 +208,21 @@ public class HexGrid {
         return WorldToHex(new Vector2(worldCoords.x, worldCoords.z));
     }
 
-    public Vector2 HexToWorld(Vector2Int hexCoords) {
+    public Vector3 HexToWorld(Vector2Int hexCoords) {
+        Vector2 temp = this.gridLayout.HexToWorld(GetHex(hexCoords));
+        return new Vector3(temp.x, 0, temp.y);
+    }
+
+    public Vector3 HexToWorld(Hex hex) {
+        Vector2 temp = this.gridLayout.HexToWorld(hex);
+        return new Vector3(temp.x, 0, temp.y);
+    }
+
+    public Vector2 HexToWorld2D(Vector2Int hexCoords) {
         return this.gridLayout.HexToWorld(GetHex(hexCoords));
     }
 
-    public Vector2 HexToWorld(Hex hex) {
+    public Vector2 HexToWorld2D(Hex hex) {
         return this.gridLayout.HexToWorld(hex);
     }
 }
@@ -257,11 +273,21 @@ public class Hex {
     }
 
     public override bool Equals(object obj) {
-        return this.Equals(obj);
+        if (!object.ReferenceEquals(obj,null)) {
+            return this.Equals((Hex)obj);
+        }
+        else {
+            return false;
+        }
     }
 
     public bool Equals(Hex obj) {
+        if (!object.ReferenceEquals(obj, null)) {
             return this.coords == obj.coords;
+        }
+        else {
+            return false;
+        }
     }
 
     public override int GetHashCode() {

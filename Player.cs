@@ -14,6 +14,7 @@ public class Player : MonoBehaviour {
     public Unit selectedUnit = new Unit();
 
     public GameObject hexTargetRing;
+    public GameObject hexSelectRing;
 
 	void Start () {
         camera = Camera.main;
@@ -31,7 +32,13 @@ public class Player : MonoBehaviour {
         Ray ray = camera.ScreenPointToRay(Input.mousePosition);
 
         if (Physics.Raycast(ray, out hit, camera.farClipPlane, unitLayerMask)) {
-            Debug.DrawLine(new Vector3(9, 10, 5), hit.transform.position, Color.blue);            
+            Debug.DrawLine(new Vector3(9, 10, 5), hit.transform.position, Color.blue);
+            if (Input.GetMouseButtonDown(0)) {
+                List<Hex> moveableTiles = map.GetHexesInMovementRange(currentTile, 10);
+                foreach (Hex tile in moveableTiles) {
+                    Debug.DrawRay(map.HexToWorld(tile.axialCoords), Vector3.up * 2, Color.red, 5f);
+                }
+            }
         }
         else if (Physics.Raycast(ray, out hit, camera.farClipPlane, tileLayerMask)) {
             hexTargetRing.transform.position = hit.transform.position;
@@ -40,12 +47,12 @@ public class Player : MonoBehaviour {
 
             if(Input.GetMouseButtonDown(0)) {
                 DrawLineBetweenHexes(currentTile, map.GetHexAt(hit.transform.position));
-
+                hexSelectRing.transform.position = hit.transform.position;
             }
         }
         else {
             // hide target ring somewhere off camera
-            hexTargetRing.transform.position = new Vector3(0,1000, 0);
+            hexTargetRing.transform.position = new Vector3(0, 1000, 0);
         }
         Debug.DrawRay(gameObject.transform.position, Vector3.up * 1, Color.green);
 
