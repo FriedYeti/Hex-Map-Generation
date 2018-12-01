@@ -3,80 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BucketPriority<T> {
-    private List<List<T>> queue;
-    private readonly bool isMonotonic;
-    private int monotonicIndex;
-    private int queueCount = 0;
+public class HexMovementInfo {
+    public List<Hex> traversableTiles { get; private set; }
+    public Dictionary<Hex, Hex> tileReturnPath { get; private set; }
 
-    public BucketPriority(int approxMaxSize, bool isMonotonic = false) {
-	    queue = new List<List<T>>();
-	    this.isMonotonic = isMonotonic;
-	    monotonicIndex = 0;
-        for(int i = 0; i < approxMaxSize; i++) {
-            List<T> newList = new List<T>();
-            queue.Add(newList);
-        }
+    public HexMovementInfo(List<Hex> traversableTiles, Dictionary<Hex, Hex> tileReturnPath) {
+        this.traversableTiles = traversableTiles;
+        this.tileReturnPath = tileReturnPath;
     }
-
-    public void Enqueue(int priority, T newData) {
-        while(queue.Count <= priority) {
-            List<T> newList = new List<T>();
-            queue.Add(newList);
-        }
-	    if(isMonotonic && priority < monotonicIndex) {
-		    throw new ArgumentException("Cannot add a lower priority than has been removed from a monotonic priority");
-	    }
-        queueCount++;
-	    queue[priority].Add(newData);
-    }
-
-    public T Dequeue() {
-        if(queueCount < 1) { return default(T); }
-	    if(isMonotonic) {
-		    while(queue[monotonicIndex].Count < 1) {
-			    monotonicIndex++;
-		    }
-		    T temp = queue[monotonicIndex][queue[monotonicIndex].Count -1];
-		    queue[monotonicIndex].RemoveAt(queue[monotonicIndex].Count -1);
-            queueCount--;
-		    return temp;
-	    }
-	else {
-		int priorityIndex = 0;
-		while(queue[priorityIndex].Count < 1) {
-		    priorityIndex++;
-		}
-		T temp = queue[priorityIndex][queue[priorityIndex].Count -1];
-		queue[priorityIndex].RemoveAt(queue[priorityIndex].Count -1);
-        queueCount--;
-		return temp;
-	    }
-    }
-
-    public T Peak() {
-        if (queueCount < 1) { return default(T); }
-        if (isMonotonic) {
-            while (queue[monotonicIndex].Count < 1) {
-                monotonicIndex++;
-            }
-            T temp = queue[monotonicIndex][queue[monotonicIndex].Count - 1];
-            return temp;
-        }
-        else {
-            int priorityIndex = 0;
-            while (queue[priorityIndex].Count < 1) {
-                priorityIndex++;
-            }
-            T temp = queue[priorityIndex][queue[priorityIndex].Count - 1];
-            return temp;
-        }
-		
-    }
-	
-	public bool Empty() {
-		return queueCount == 0;
-	}
 }
 
 public class HexGrid {
@@ -99,7 +33,7 @@ public class HexGrid {
             for(int y = Math.Max(-range, -x-range); y <= Math.Min(range, -x + range); y++) {
                 int z = -x -y;
                 Hex targetHex = GetHex(startingHex.coords + new Vector3Int(x, y, z));
-                if(targetHex != null && !targetHex.GetTileInfo().isBlocked) {
+                if(!System.Object.ReferenceEquals(targetHex, null) && !targetHex.GetTileInfo().isBlocked) {
                     results.Add(targetHex);
                 }
             }
@@ -115,44 +49,46 @@ public class HexGrid {
 	    return GetHexesInRange(GetHexAt(worldCoords), range);
     }
 
-    public List<Hex> GetHexesInMovementRange(Hex startingHex, int movementRange) {
-    // Modified Dijkstra's Algorithm AKA Uniform Cost Search
-	// results[x] is a List<Hex> reachable in x movementCost
+    public HexMovementInfo GetHexesInMovementRange(Hex startingHex, int movementRange) {
+        // Modified Dijkstra's Algorithm AKA Uniform Cost Search
 	    List<Hex> results = new List<Hex>();
 	    results.Add(startingHex);
 
         BucketPriority<Hex> frontier = new BucketPriority<Hex>(128, true);
         frontier.Enqueue(0, startingHex);
         Dictionary<Hex, int> costSoFar = new Dictionary<Hex, int>();
-        costSoFar[startingHex] = 0;
+        Dictionary<Hex, Hex> cameFrom = new Dictionary<Hex, Hex>();
+        if (!UnityEngine.Object.ReferenceEquals(startingHex, null)) {
+            costSoFar[startingHex] = 0;
+        }
         while(!frontier.Empty()) {
             Hex currentHex = frontier.Dequeue();
             List<Hex> hexNeighbors = GetHexNeighbors(currentHex);
             if (hexNeighbors.Count > 0) {
                 foreach (Hex nextHex in hexNeighbors) {
                     int newCost = costSoFar[currentHex] + nextHex.GetTileInfo().movementCost;
-                    if ((!costSoFar.ContainsKey(nextHex) || newCost < costSoFar[nextHex]) && newCost < movementRange) {
+                    if ((!costSoFar.ContainsKey(nextHex) || newCost < costSoFar[nextHex]) && newCost < movementRange && !(nextHex.GetTileInfo().isBlocked || nextHex.GetTileInfo().isOccupied)) {
                         costSoFar[nextHex] = newCost;
                         int newPriority = newCost;
                         frontier.Enqueue(newPriority, nextHex);
-
+                        cameFrom[nextHex] = currentHex;
                         results.Add(nextHex);
                     }
                 }
             }
         }
-    return results;
+        return new HexMovementInfo(results, cameFrom);
     }
 
     public Hex GetHex(Vector2Int axialCoords) {
-        if(axialCoords.x < 0 || axialCoords.y < 0 || axialCoords.x > gridSize.x || axialCoords.y > gridSize.y) {
+        if(axialCoords.x < 0 || axialCoords.y < 0 || axialCoords.x > gridSize.x -1 || axialCoords.y > gridSize.y -1) {
             return null;
         }
         return hexGrid[axialCoords.x, axialCoords.y];
     }
 
     public Hex GetHex(Vector3Int coords) {
-        if (coords.x < 0 || coords.z < 0 || coords.x > gridSize.x || coords.z > gridSize.y) {
+        if (coords.x < 0 || coords.z < 0 || coords.x > gridSize.x -1 || coords.z > gridSize.y -1) {
             return null;
         }
         return hexGrid[coords.x, coords.z];
@@ -177,6 +113,20 @@ public class HexGrid {
 	        }
 	    }
 	    return neighbors;
+    }
+
+    public Hex GetRandomHex() {
+        Vector2Int randomCoords = GetRandomHexCoords();
+        Hex randomHex = GetHex(randomCoords);
+        return randomHex;
+    }
+
+    public Vector2Int GetRandomHexCoords() {
+        Vector2Int randomCoords = new Vector2Int();
+        randomCoords.x = UnityEngine.Random.Range(0, this.gridSize.x - 1);
+        randomCoords.y = UnityEngine.Random.Range(0, this.gridSize.y - 1);
+
+        return randomCoords;
     }
 
     public List<Hex> GetHexNeighbors(Vector3Int coords) {
@@ -465,4 +415,10 @@ public struct FractionalHex {
         return results;
     }
 
+}
+
+public static class HexUtil {
+    public static Vector3 CubeLerp(Vector3 a, Vector3 b, float t) {
+        return new Vector3(Mathf.Lerp(a.x, b.x, t), Mathf.Lerp(a.y, b.y, t), Mathf.Lerp(a.z, b.z, t));
+    }
 }
